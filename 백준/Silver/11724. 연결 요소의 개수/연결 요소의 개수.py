@@ -6,10 +6,15 @@ def find(node):
 
 
 def union(node1, node2):
-    if find(node1) > find(node2):
-        parent[node1] = find(node2)
+    a = find(node1)
+    b = find(node2)
+
+    # 부모 자체를 바궈야 한다.
+    # node1의 부모만 바꿀 경우 연결이 끊긴다.
+    if a > b:
+        parent[a] = b
     else:
-        parent[node2] = find(node1)
+        parent[b] = a
 
 
 def dfs(node):
