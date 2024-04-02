@@ -1,6 +1,6 @@
 import sys
 
-sys.setrecursionlimit(999999)
+sys.setrecursionlimit(10**5)
 
 def dfs(node):
     visited[node] = True
