@@ -12,8 +12,10 @@ def solution(n, computers):
     
     # print(network)
     for k in range(n):
-        if visited[k] == 0:
+        if len(network[k]) != 0 and visited[k] == 0:
             bfs(k, network, visited)
+            answer+=1
+        if len(network[k]) == 0:
             answer+=1
     
     return answer
