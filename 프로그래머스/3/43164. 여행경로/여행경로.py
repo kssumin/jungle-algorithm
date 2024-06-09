@@ -1,32 +1,44 @@
 def solution(tickets):
     global answer
     answer = []
+    graph = {}
     
-    visited = [0 for _ in range(len(tickets))]
-    tickets.sort(key = lambda x:x[1])
+    # {src : [dest...]}
+    for ticket in tickets:
+        src, dest = ticket
+        if src not in graph:
+            graph[src] = [dest]
+        else:
+            graph[src].append(dest)
     
-    dfs("ICN", ["ICN"], visited, tickets)
+    # dest 정렬
+    for src in graph:
+        graph[src].sort()
+    
+    dfs("ICN", tickets, ["ICN"], graph)
+    
+    return answer[0]
 
-    if answer:
-        return answer[0]
-    else:
-        return [] 
-
-def dfs(start, path, visited, tickets):
+def dfs(src, tickets, tmp_path, graph):
     if len(answer)>=1:
         return
     
-    if len(path) == len(tickets)+1:
-        answer.append(path)
+    if len(tmp_path) == len(tickets)+1:
+        answer.append(tmp_path)
         return
     
-    for idx, ticket in enumerate(tickets):
-        if ticket[0] == start and not visited[idx]:
-            visited[idx] = True
-            dfs(ticket[1], path+[ticket[1]], visited, tickets)
-            visited[idx] = False
-        
+    if src not in graph:
+        return
+    if not graph[src]:
+        return
     
-
+    for temp in range(len(graph[src])):     
+        dest = graph[src].pop(0)
+        dfs(dest, tickets, tmp_path+[dest], graph)
+        graph[src].append(dest)
+        # graph[src].sort(reverse=True)
+    
+    
+    
     
     
