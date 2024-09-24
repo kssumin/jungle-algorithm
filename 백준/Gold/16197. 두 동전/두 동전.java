@@ -53,18 +53,19 @@ class Main {
             int y2 = temp[2];
             int x2 = temp[3];
             int current = temp[4];
-
-            if (current >= 10) {
+            int next = current + 1;
+            
+            if (next > 10) {
                 return -1;
             }
-
+            
+            
             for (int i = 0; i < 4; i++) {
                 int nextY1 = y1 + dy[i];
                 int nextX1 = x1 + dx[i];
                 int nextY2 = y2 + dy[i];
                 int nextX2 = x2 + dx[i];
-                int next = current + 1;
-
+                
                 if (isRange(nextY1, nextX1) && isRange(nextY2, nextX2)) {
                     if (isVisited[nextY1][nextX1][nextY2][nextX2]) {
                         continue;
