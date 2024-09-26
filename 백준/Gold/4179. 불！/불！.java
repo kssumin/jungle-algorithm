@@ -15,48 +15,43 @@ public class Main {
 
     static int n, m;
     static char[][] arr;
-    static boolean[][] isVisitedFire;
     static boolean[][] isVisitedPerson;
-    static Queue<int[]> queue;
+
+    static Queue<int[]> fire;
+    static Queue<int[]> person;
+
     static StringBuilder sb = new StringBuilder();
 
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        
+
         int[] temp = Arrays.stream(br.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
         n = temp[0];
         m = temp[1];
 
         arr = new char[n][m];
-        isVisitedFire = new boolean[n][m];
         isVisitedPerson = new boolean[n][m];
-        queue = new LinkedList<>();
+        fire = new LinkedList<>();
+        person = new LinkedList<>();
 
 
         for (int j = 0; j < n; j++) {
             arr[j] = br.readLine().toCharArray();
         }
 
-
-        int[] start = new int[0];
-
         for (int j = 0; j < n; j++) {
             for (int k = 0; k < m; k++) {
                 if (arr[j][k] == FIRE) {
-                    queue.add(new int[]{j, k, FIRE, 0});
-                    isVisitedFire[j][k] = true;
+                    fire.add(new int[]{j, k});
                 }
 
                 if (arr[j][k] == PERSON) {
-                    start = new int[]{j, k, PERSON, 0};
+                    person.add(new int[]{j, k, 0});
                     isVisitedPerson[j][k] = true;
                 }
             }
         }
-        queue.add(start);
-
         int result = bfs();
-
 
         sb.append(result == -1 ? "IMPOSSIBLE" : result);
         sb.append("\n");
@@ -73,15 +68,54 @@ public class Main {
     }
 
     private static int bfs() {
-        while (!queue.isEmpty()) {
-            int[] temp = queue.remove();
+        // 사람이 더 이상 움직일 곳이 없다는 뜻
+        while (!person.isEmpty()) {
+            spreadFire();
+            int mid = movePerson();
+
+            if (mid != -1) {
+                return mid;
+            }
+        }
+        return -1;
+    }
+
+    private static void spreadFire() {
+        int size = fire.size();
+
+        // 처음에 불 사이즈 만큼만 확장한다.
+        for (int j = 0; j < size; j++) {
+            int[] temp = fire.remove();
 
             int y = temp[0];
             int x = temp[1];
-            char type = (char) temp[2];
-            int count = temp[3];
 
-            if (isExit(y, x) && type == PERSON) {
+            for (int i = 0; i < 4; i++) {
+                int nextY = y + dy[i];
+                int nextX = x + dx[i];
+
+                if (isRange(nextY, nextX)) {
+                    // 사람, 빈 경우에만 불을 붙일 수 있다.
+                    if (arr[nextY][nextX] == PERSON || arr[nextY][nextX] == EMPTY) {
+                        arr[nextY][nextX] = FIRE;
+                        fire.add(new int[]{nextY, nextX});
+                    }
+                }
+            }
+        }
+    }
+
+    private static int movePerson() {
+        int personSize = person.size();
+
+        for (int j = 0; j < personSize; j++) {
+            int[] temp = person.remove();
+
+            int y = temp[0];
+            int x = temp[1];
+            int count = temp[2];
+
+            if (isExit(y, x)) {
                 return count + 1;
             }
 
@@ -89,28 +123,14 @@ public class Main {
                 int nextY = y + dy[i];
                 int nextX = x + dx[i];
 
-                if (isRange(nextY, nextX)) {
-//                    System.out.println("y: " + y + ", x: " + x + ", nextY: " + nextY + ", nextX: " + nextX);
-//                    System.out.println("type: " + type + ", count: " + count);
+                if (isRange(nextY, nextX) && !isVisitedPerson[nextY][nextX]) {
+                    if (arr[nextY][nextX] == EMPTY) {
+                        arr[nextY][nextX] = PERSON;
+                        person.add(new int[]{nextY, nextX, count + 1});
+                        isVisitedPerson[nextY][nextX] = true;
 
-                    if (type == PERSON && !isVisitedPerson[nextY][nextX]) {
-                        if (arr[nextY][nextX] == EMPTY) {
-                            arr[nextY][nextX] = PERSON;
-                            queue.add(new int[]{nextY, nextX, PERSON, count + 1});
-                            isVisitedPerson[nextY][nextX] = true;
-
-                            if (arr[y][x] == PERSON) {
-                                arr[y][x] = EMPTY;
-                            }
-                        }
-                    }
-
-                    if (type == FIRE) {
-                        // 사람, 빈 경우에만 불을 붙일 수 있다.
-                        if (arr[nextY][nextX] == PERSON || arr[nextY][nextX] == EMPTY) {
-                            arr[nextY][nextX] = FIRE;
-                            queue.add(new int[]{nextY, nextX, FIRE, count + 1});
-                            isVisitedFire[nextY][nextX] = true;
+                        if (arr[y][x] == PERSON) {
+                            arr[y][x] = EMPTY;
                         }
                     }
                 }
