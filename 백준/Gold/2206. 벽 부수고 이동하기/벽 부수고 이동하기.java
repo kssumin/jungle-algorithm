@@ -1,87 +1,84 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 
-class Main {
-    static final int NOT_GO = 1;
+/**
+ * 벽을 1개까지 부수는 것은 가능하다.
+ */
+public class Main {
+    static int[] dx = {-1, 1, 0, 0};
+    static int[] dy = {0, 0, -1, 1};
+
+    static final int WALL = 1;
     static final int GO = 0;
 
-    static final int[] START = {0, 0};
-    static int[] END;
+    static final int NOT_BROKEN_WALL = 0;
+    static final int BROKEN_WALL = 1;
 
-    static int[] dx = {0, 0, 1, -1};
-    static int[] dy = {-1, 1, 0, 0};
-
-    static int n;
-    static int m;
-
+    static int n, m, k;
     static int[][] arr;
-    static boolean[][][] isVisited;
+
     static Queue<int[]> queue = new LinkedList<>();
+    static int[][] brokenCountArr;
 
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
         int[] temp = Arrays.stream(br.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
-
         n = temp[0];
         m = temp[1];
+//        k = temp[2];
+        k = 1;
 
         arr = new int[n][m];
-        isVisited = new boolean[2][n][m]; // 벽을 부순 경험 여부(1 : 있음, 0 : 없음)
-        END = new int[]{n - 1, m - 1};
+        brokenCountArr = new int[n][m];
 
-        // 초기화
         for (int i = 0; i < n; i++) {
             arr[i] = Arrays.stream(br.readLine().split("")).mapToInt(Integer::parseInt).toArray();
         }
+
+        for (int[] ints : brokenCountArr) {
+            Arrays.fill(ints, Integer.MAX_VALUE);
+        }
+
+        queue.add(new int[]{0, 0, NOT_BROKEN_WALL, 1}); // 현재 이동까지 벽을 부순 수, 이동 횟수
+        brokenCountArr[0][0] = NOT_BROKEN_WALL;
 
         int result = bfs();
         System.out.println(result);
     }
 
     private static int bfs() {
-        int x = START[0];
-        int y = START[1];
-
-        queue.add(new int[]{y, x, 0, 1}); // y, x, 벽을 부순 경험 여부(1 : 있음, 0 : 없음)
-        isVisited[0][y][x] = true;
-
         while (!queue.isEmpty()) {
-            int[] t = queue.remove();
-            int currentY = t[0];
-            int currentX = t[1];
-            int currentIsBrokenWall = t[2];
-            int temp = t[3];
+            int[] temp = queue.remove();
 
-            if (isEnd(currentY, currentX)) {
-                return temp;
+            int currentY = temp[0];
+            int currentX = temp[1];
+            int brokenCount = temp[2];
+            int count = temp[3];
+
+            if (currentY == n - 1 && currentX == m - 1) {
+                return count;
             }
 
             for (int i = 0; i < 4; i++) {
-                int ny = currentY + dy[i];
-                int nx = currentX + dx[i];
+                int nextY = currentY + dy[i];
+                int nextX = currentX + dx[i];
 
-                // 벽이 아닐 때
-                if (canGoWhenNotWall(ny, nx, arr, currentIsBrokenWall)) {
-                    // 이전에 벽을 부순 경험 여부에 따라서 방문 처리
-                    // 벽을 부수고 와서 최단 거리이든
-                    // 벽을 부수지 않고 최단 거리이든
-                    // 두 가지 케이스의 최단 거리를 업데이트 한다.
-                    isVisited[currentIsBrokenWall][ny][nx] = true;
-                    queue.add(new int[]{ny, nx, currentIsBrokenWall, temp +1});
+                // 벽을 부수지 않는 케이스
+                if (canGoNotWall(nextY, nextX, brokenCount)) {
+                    queue.add(new int[]{nextY, nextX, brokenCount, count + 1});
+                    brokenCountArr[nextY][nextX] = brokenCount;
                 }
-
-                // 벽 일때
-                if(canGoWhenWall(ny, nx, arr, currentIsBrokenWall)) {
-                    isVisited[1][ny][nx] = true;
-                    arr[ny][nx] = temp + 1;
-                    queue.add(new int[]{ny, nx, 1, temp+1});
+                // 벽을 부수는 케이스
+                else if (canGoWithBrokenWall(nextY, nextX, brokenCount)) {
+                    queue.add(new int[]{nextY, nextX, brokenCount + 1, count + 1});
+                    brokenCountArr[nextY][nextX] = brokenCount + 1;
                 }
             }
         }
-
         return -1;
     }
 
@@ -89,17 +86,11 @@ class Main {
         return y >= 0 && y < n && x >= 0 && x < m;
     }
 
-    private static boolean isEnd(int y, int x) {
-        return y == END[0] && x == END[1];
+    private static boolean canGoNotWall(int y, int x, int brokenCount) {
+        return isRange(y, x) && arr[y][x] == GO && brokenCountArr[y][x] > brokenCount; // 0이면 최초, 더 작은 횟수로 먼저 도착했다면 업데이트 안 해도 됌
     }
 
-    // 벽이 아닐 때
-    private static boolean canGoWhenNotWall(int y, int x, int[][] arr, int currentIsBrokenWall) {
-        return isRange(y, x) && arr[y][x] == GO && !isVisited[currentIsBrokenWall][y][x];
-    }
-
-    // 벽일 때
-    private static boolean canGoWhenWall(int y, int x, int[][] arr, int currentIsBrokenWall) {
-        return isRange(y, x) && arr[y][x] == NOT_GO && currentIsBrokenWall == 0 && !isVisited[1][y][x];
+    private static boolean canGoWithBrokenWall(int y, int x, int brokenCount) {
+        return isRange(y, x) && arr[y][x] == WALL && brokenCount + 1 <= k && brokenCountArr[y][x] > brokenCount + 1;
     }
 }
