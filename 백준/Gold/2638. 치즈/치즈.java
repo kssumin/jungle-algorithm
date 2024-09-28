@@ -9,7 +9,6 @@ public class Main {
     static int[] dx = {-1, 1, 0, 0};
     static int[] dy = {0, 0, -1, 1};
 
-    static final int TEMP = 3;
     static final int AIR = 0;
     static final int CHEESE = 1;
 
@@ -42,10 +41,6 @@ public class Main {
         return y >= 0 && y < n && x >= 0 && x < m;
     }
 
-    private static boolean canGo(int y, int x) {
-        return isRange(y, x) && !isVisited[y][x];
-    }
-
 
     private static int execute() {
         int retryCount = 0;
@@ -60,7 +55,6 @@ public class Main {
 
             findAir();
             meltCheese();
-            tempToCheese();
         }
         return retryCount;
     }
@@ -83,23 +77,20 @@ public class Main {
 
                 if (isRange(nextY, nextX)) {
                     if (arr[nextY][nextX] == CHEESE) {
-                        arr[nextY][nextX] = TEMP;
-                    } else if (arr[nextY][nextX] == TEMP) {
-                        arr[nextY][nextX] = AIR;
+                        if (!isVisited[nextY][nextX]) {
+                            isVisited[nextY][nextX] = true;
+                        } else {
+                            arr[nextY][nextX] = AIR;
+                        }
+                    }
+
+                    if (arr[nextY][nextX] == AIR && !isVisited[nextY][nextX]) {
+                        airQueue.add(new int[]{nextY, nextX});
                         isVisited[nextY][nextX] = true;
                     }
                 }
-
-                if (isAir(nextY, nextX)) {
-                    airQueue.add(new int[]{nextY, nextX});
-                    isVisited[nextY][nextX] = true;
-                }
             }
         }
-    }
-
-    private static boolean isAir(int y, int x) {
-        return isRange(y, x) && !isVisited[y][x] && arr[y][x] == AIR;
     }
 
     private static boolean isAllMelt() {
@@ -111,13 +102,5 @@ public class Main {
             }
         }
         return true;
-    }
-
-    private static void tempToCheese() {
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) {
-                arr[i][j] = (arr[i][j] == TEMP) ? CHEESE : arr[i][j];
-            }
-        }
     }
 }
