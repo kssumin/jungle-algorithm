@@ -5,93 +5,118 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class Main{
-    static int M;
-    static int N;
-    static int[][] arr;
+public class Main {
     static int[] dx = {-1, 1, 0, 0};
-    static int[] dy = {0, 0, 1, -1};
-    static boolean[][] isChecked;
-    static int cheezeCount;
+    static int[] dy = {0, 0, -1, 1};
+
+    static final int AIR = 0;
+    static final int CHEESE = 1;
+
+    static int n, m;
+    static int[][] arr;
+    static boolean[][] isVisited;
+
+    static Queue<int[]> airQueue = new LinkedList<>();
 
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String[] input = br.readLine().split(" ");
-        M = Integer.parseInt(input[0]);
-        N = Integer.parseInt(input[1]);
-        arr = new int[M][N];
-        isChecked = new boolean[M][N];
-        cheezeCount = 0;
 
-        // 총 치즈의 개수
-        for (int i = 0; i < M; i++) {
-            String[] s = br.readLine().split(" ");
-            for (int j = 0; j < N; j++) {
-                int temp = Integer.parseInt(s[j]);
-                arr[i][j] = temp;
-                if (temp == 1) {
-                    cheezeCount++;
-                }
-            }
-        }
-        int answer;
+        int[] temp = Arrays.stream(br.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
+        n = temp[0];
+        m = temp[1];
 
-        // 치즈가 남아있지 않다면 작업 종료
-        for (answer = 0; isCheese(); answer++) {
-            // 초기화 작업
-            for (boolean[] arr : isChecked) {
-                Arrays.fill(arr, false);
-            }
+        arr = new int[n][m];
+        isVisited = new boolean[n][m];
 
-            cheezeCount = 0;
-            isChecked[0][0] = true;
-            dfs(0, 0);
+        for (int j = 0; j < n; j++) {
+            arr[j] = Arrays.stream(br.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
         }
 
-        System.out.println(answer);
-        System.out.println(cheezeCount);
+        int[] results = execute();
 
+        System.out.println(results[0]);
+        System.out.println(results[1]);
     }
 
-    private static void dfs(int x, int y) {
-        for (int i = 0; i < 4; i++) {
-            int newX = x + dx[i];
-            int newY = y + dy[i];
+    private static boolean isRange(int y, int x) {
+        return y >= 0 && y < n && x >= 0 && x < m;
+    }
 
-            if (newX < 0 || newX >= M || newY < 0 || newY >= N) {
-                continue;
+    private static boolean canGo(int y, int x) {
+        return isRange(y, x) && !isVisited[y][x];
+    }
+    
+
+    private static int[] execute() {
+        int retryCount = 0;
+        int cheese = 0;
+
+        // 치즈가 모두 녹을 때까지 반복한다.
+        while (!isAllMelt()) {
+            cheese = getCheese();
+            retryCount += 1;
+
+            for (boolean[] booleans : isVisited) {
+                Arrays.fill(booleans, false);
             }
-            if (!isChecked[newX][newY]) {
-                isChecked[newX][newY]=true;
-                if (arr[newX][newY] == 1) {
-                    arr[newX][newY] = 2;
-                    cheezeCount++;
-                } else {
-                    // 방문하지 않은 점 && 공기
-                    dfs(newX, newY);
+
+            findAir();
+            meltCheese();
+        }
+        return new int[]{retryCount, cheese};
+    }
+
+    private static void findAir() {
+        airQueue.add(new int[]{0, 0});
+        isVisited[0][0] = true;
+    }
+
+    private static void meltCheese() {
+        while (!airQueue.isEmpty()) {
+            int[] temp = airQueue.remove();
+
+            int y = temp[0];
+            int x = temp[1];
+
+            for (int i = 0; i < 4; i++) {
+                int nextY = y + dy[i];
+                int nextX = x + dx[i];
+
+                if (canGo(nextY, nextX)) {
+                    if (arr[nextY][nextX] == CHEESE) {
+                        arr[nextY][nextX] = AIR;
+                        isVisited[nextY][nextX] = true;
+                    }
+                    else{
+                        airQueue.add(new int[]{nextY, nextX});
+                        isVisited[nextY][nextX] = true;
+                    }
                 }
             }
         }
     }
 
-    private static boolean isCheese() {
-        // 공기와 맞닿은 치즈 공기로 바꾸기
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                if (arr[i][j] == 2) {
-                    arr[i][j] = 0;
-                }
-            }
-        }
 
-        // 판 위에 치즈가 존재하는지 체크.
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                if (arr[i][j] == 1) {
-                    return true;
+    private static int getCheese() {
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (arr[i][j] == CHEESE) {
+                    count += 1;
                 }
             }
         }
-        return false;
+        return count;
+    }
+
+    private static boolean isAllMelt() {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (arr[i][j] == CHEESE) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
