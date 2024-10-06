@@ -10,7 +10,6 @@ class Main {
     static final char EMPTY = '.';
 
     static Queue<int[]> queue = new LinkedList<>();
-    static Queue<int[]> wallQueue = new LinkedList<>();
 
     static final int[][] d = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {0, 0}};
 
@@ -25,19 +24,16 @@ class Main {
         for (int i = 0; i < MAX; i++) {
             arr[i] = br.readLine().toCharArray();
         }
-        findWall();
         bfs(MAX - 1, 0);
     }
 
     private static void bfs(int y, int x) {
-        queue.add(new int[]{y, x});
-        int tryCount = 0;
+        queue.add(new int[]{y, x, 1});
         while (!queue.isEmpty()) {
-            tryCount++;
             isVisited = new boolean[MAX][MAX];
             boolean result = movePerson();
 
-            if (result || tryCount >= 8) {
+            if (result) {
                 answer = 1;
                 break;
             }
@@ -49,59 +45,49 @@ class Main {
 
     private static boolean movePerson() {
         int size = queue.size();
-        Queue<int[]> nextQueue = new LinkedList<>();
 
         for (int i = 0; i < size; i++) {
             int[] temp = queue.remove();
 
             int currentY = temp[0];
             int currentX = temp[1];
+            int count = temp[2];
 
-            if (arr[currentY][currentX] == WALL) {
+            char current = arr[currentY][currentX];
+
+            if (current == WALL) {
                 continue;
             }
 
-            if (currentY == 0 && currentX == MAX - 1) {
+            if (count >= 8) {
                 return true;
             }
 
-            for (int[] move : d) {
-                int nextY = currentY + move[0];
-                int nextX = currentX + move[1];
+            for (int j = 0; j < d.length; j++) {
+                int nextY = currentY + d[j][0];
+                int nextX = currentX + d[j][1];
 
-                if (canGo(nextY, nextX) && (nextY == 0 || arr[nextY - 1][nextX] != WALL)) {
-                    nextQueue.add(new int[]{nextY, nextX});
+                if (nextY == 0 && nextX == MAX - 1) {
+                    return true;
+                }
+
+                if (canGo(nextY, nextX)) {
+                    queue.add(new int[]{nextY, nextX, count + 1});
                     isVisited[nextY][nextX] = true;
                 }
             }
         }
-        queue = nextQueue;
         return false;
     }
 
     private static void moveWall() {
-        boolean[][] newWall = new boolean[MAX][MAX];
-        int size = wallQueue.size();
-
-        for (int i = 0; i < size; i++) {
-            int[] temp = wallQueue.remove();
-
-            int currentY = temp[0];
-            int currentX = temp[1];
-            arr[currentY][currentX] = EMPTY;
-
-            int nextY = currentY + 1;
-
-            if (canMoveWall(nextY)) {
-                newWall[nextY][currentX] = true;
-            }
-        }
-
-        for (int i = 0; i < MAX; i++) {
+        for (int i = MAX - 1; i >= 0; i--) {
             for (int j = 0; j < MAX; j++) {
-                if (newWall[i][j]) {
-                    arr[i][j] = WALL;
-                    wallQueue.add(new int[]{i, j});
+                if (arr[i][j] == WALL) {
+                    arr[i][j] = EMPTY;
+                    if (canMoveWall(i + 1)) {
+                        arr[i + 1][j] = WALL;
+                    }
                 }
             }
         }
@@ -112,20 +98,11 @@ class Main {
     }
 
     private static boolean canMoveWall(int y) {
-        return y < MAX;
+        return y >= 0 && y < MAX;
     }
 
     private static boolean isRange(int y, int x) {
         return y >= 0 && y < MAX && x >= 0 && x < MAX;
     }
 
-    private static void findWall() {
-        for (int i = 0; i < MAX; i++) {
-            for (int j = 0; j < MAX; j++) {
-                if (arr[i][j] == WALL) {
-                    wallQueue.add(new int[]{i, j});
-                }
-            }
-        }
-    }
 }
